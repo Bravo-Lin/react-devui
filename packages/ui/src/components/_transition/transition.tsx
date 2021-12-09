@@ -1,11 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import type { ThrottleByAnimationFrame } from '../../hooks/throttle-and-debounce';
 
 import { isFunction, isNumber, isString } from 'lodash';
-import React, { useImperativeHandle, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
-import { useAsync, useThrottle, useImmer } from '../../hooks';
+import { useAsync, useImmer } from '../../hooks';
 import { CssRecord, getMaxTime } from './utils';
 
 export interface DTransitionStateList {
@@ -26,10 +25,6 @@ export interface DTransitionCallbackList {
   afterLeave?: () => void;
 }
 
-export interface DTransitionRef {
-  transitionThrottle: ThrottleByAnimationFrame;
-}
-
 export interface DTransitionProps {
   dEl: HTMLElement | null;
   dVisible?: boolean;
@@ -40,7 +35,7 @@ export interface DTransitionProps {
   dRender: (hidden: boolean) => React.ReactNode;
 }
 
-export const DTransition = React.forwardRef<DTransitionRef, DTransitionProps>((props, ref) => {
+export function DTransition(props: DTransitionProps) {
   const { dEl, dVisible = false, dStateList, dCallbackList, dEndStyle, dSkipFirst = true, dRender } = props;
 
   const dataRef = useRef({
@@ -49,7 +44,6 @@ export const DTransition = React.forwardRef<DTransitionRef, DTransitionProps>((p
   });
 
   const asyncCapture = useAsync();
-  const { throttleByAnimationFrame } = useThrottle();
   const [hidden, setHidden] = useImmer(!dVisible);
   const [cssRecord] = useImmer(() => new CssRecord());
 
@@ -59,7 +53,6 @@ export const DTransition = React.forwardRef<DTransitionRef, DTransitionProps>((p
     if (dEl) {
       cssRecord.backCss(dEl);
       asyncCapture.clearAll();
-      throttleByAnimationFrame.skipThrottle();
 
       const stateList = isFunction(dStateList) ? dStateList() ?? {} : dStateList ?? {};
       const callbackList = isFunction(dCallbackList) ? dCallbackList() ?? {} : dCallbackList ?? {};
@@ -94,7 +87,6 @@ export const DTransition = React.forwardRef<DTransitionRef, DTransitionProps>((p
                 setHidden(true);
               }
             });
-            throttleByAnimationFrame.continueThrottle();
           }, timeout);
         });
       });
@@ -142,16 +134,8 @@ export const DTransition = React.forwardRef<DTransitionRef, DTransitionProps>((p
   }, [dEl, hidden]);
   //#endregion
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      transitionThrottle: throttleByAnimationFrame,
-    }),
-    [throttleByAnimationFrame]
-  );
-
   return <>{dRender(hidden)}</>;
-});
+}
 
 export interface DCollapseTransitionProps extends DTransitionProps {
   dDirection?: 'horizontal' | 'vertical';
@@ -160,7 +144,7 @@ export interface DCollapseTransitionProps extends DTransitionProps {
   dSpace?: number | string;
 }
 
-export const DCollapseTransition = React.forwardRef<DTransitionRef, DCollapseTransitionProps>((props, ref) => {
+export function DCollapseTransition(props: DCollapseTransitionProps) {
   const { dEl, dCallbackList, dDirection = 'vertical', dTimingFunction, dDuring = 300, dSpace = 0, ...restProps } = props;
 
   const enterTimeFunction = dTimingFunction ? (isString(dTimingFunction) ? dTimingFunction : dTimingFunction.enter) : 'linear';
@@ -176,7 +160,6 @@ export const DCollapseTransition = React.forwardRef<DTransitionRef, DCollapseTra
   return (
     <DTransition
       {...restProps}
-      ref={ref}
       dEl={dEl}
       dStateList={() => {
         if (dEl) {
@@ -208,4 +191,4 @@ export const DCollapseTransition = React.forwardRef<DTransitionRef, DCollapseTra
       dEndStyle={shouldHidden ? undefined : { leave: { [attribute]: space } }}
     />
   );
-});
+}

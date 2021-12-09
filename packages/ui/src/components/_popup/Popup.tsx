@@ -1,7 +1,7 @@
 import type { DElementSelector } from '../../hooks/element-ref';
 import type { Updater } from '../../hooks/immer';
 import type { DPlacement } from '../../utils/position';
-import type { DTransitionStateList, DTransitionRef } from '../_transition';
+import type { DTransitionStateList } from '../_transition';
 
 import { isUndefined } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useImperativeHandle, useRef } from 'react';
@@ -94,7 +94,6 @@ export const DPopup = React.forwardRef<DPopupRef, DPopupProps>((props, ref) => {
   //#endregion
 
   //#region Ref
-  const [transition, transitionRef] = useRefCallback<DTransitionRef>();
   const [popupEl, popupRef] = useRefCallback<HTMLDivElement>();
   const [hoverReferenceEl, hoverReferenceRef] = useRefCallback<HTMLDivElement>();
   //#endregion
@@ -441,28 +440,20 @@ export const DPopup = React.forwardRef<DPopupRef, DPopupProps>((props, ref) => {
   useEffect(() => {
     const [asyncGroup, asyncId] = asyncCapture.createGroup();
     if (visible && triggerRef.current && popupEl) {
-      const throttleUpdate = () => {
-        if (transition) {
-          transition.transitionThrottle.run(updatePosition);
-        }
-      };
-
-      throttleUpdate();
-
       if (!isFixed && rootContentRef.current) {
-        asyncGroup.onResize(rootContentRef.current, throttleUpdate);
+        asyncGroup.onResize(rootContentRef.current, updatePosition);
       }
 
-      asyncGroup.onResize(popupEl, throttleUpdate);
+      asyncGroup.onResize(popupEl, updatePosition);
 
-      asyncGroup.onResize(triggerRef.current, throttleUpdate);
+      asyncGroup.onResize(triggerRef.current, updatePosition);
 
-      asyncGroup.onGlobalScroll(throttleUpdate);
+      asyncGroup.onGlobalScroll(updatePosition);
     }
     return () => {
       asyncCapture.deleteGroup(asyncId);
     };
-  }, [asyncCapture, visible, updatePosition, triggerRef, popupEl, transition, rootContentRef, isFixed]);
+  }, [asyncCapture, visible, updatePosition, triggerRef, popupEl, rootContentRef, isFixed]);
   //#endregion
 
   useImperativeHandle(
@@ -521,7 +512,6 @@ export const DPopup = React.forwardRef<DPopupRef, DPopupProps>((props, ref) => {
       {dTriggerRender?.(triggerRenderProps)}
       <DTransition
         dEl={popupEl}
-        ref={transitionRef}
         dVisible={visible}
         dStateList={updatePosition}
         dCallbackList={{

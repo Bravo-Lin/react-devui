@@ -123,6 +123,21 @@ export function DDrawer(props: DDrawerProps) {
       }
     }
   }, [dPrefix, dZIndex, isFixed, setZIndex, visible]);
+
+  useEffect(() => {
+    if (dialogRefContent?.contentEl && visible) {
+      const rect = dialogRefContent.contentEl.getBoundingClientRect();
+      console.log(rect);
+      __onVisibleChange?.({
+        visible: true,
+        top: distance.top + (dPlacement === 'top' ? rect.height : 0),
+        right: distance.right + (dPlacement === 'right' ? rect.width : 0),
+        bottom: distance.bottom + (dPlacement === 'bottom' ? rect.height : 0),
+        left: distance.left + (dPlacement === 'left' ? rect.width : 0),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogRefContent?.contentEl, visible]);
   //#endregion
 
   const childDrawer = useMemo(() => {
@@ -183,18 +198,6 @@ export function DDrawer(props: DDrawerProps) {
         }}
         dCallbackList={() => {
           return {
-            beforeEnter: () => {
-              if (dialogRefContent?.contentEl) {
-                const rect = dialogRefContent.contentEl.getBoundingClientRect();
-                __onVisibleChange?.({
-                  visible: true,
-                  top: distance.top + (dPlacement === 'top' ? rect.height : 0),
-                  right: distance.right + (dPlacement === 'right' ? rect.width : 0),
-                  bottom: distance.bottom + (dPlacement === 'bottom' ? rect.height : 0),
-                  left: distance.left + (dPlacement === 'left' ? rect.width : 0),
-                });
-              }
-            },
             afterEnter: () => {
               afterVisibleChange?.(true);
             },
